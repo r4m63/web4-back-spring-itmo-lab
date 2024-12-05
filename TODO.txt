@@ -1,0 +1,56 @@
+REST
+stateless
+JWT
+
+additional:
+    - harbor host
+    - domain itmo.ramil21.ru
+    - nginx or apache
+    - попробывать нативно и в docker
+
+frontend
+    -
+
+
+- Подтверждение почты при регистрации (mail send)
+- Оповещение о регистрации
+- OAuth ВК
+
+
+
+Логика авторизации
+    Клиент отправляет email и password.
+    Сервер извлекает password_hash и salt из базы.
+    Проверяет совпадение bcrypt(salt + password) с сохранённым хэшем.
+    Если успешно:
+        Генерируется access token (короткий срок).
+        Генерируется refresh token (долгий срок).
+        Хэш refresh token сохраняется в таблице refresh_tokens.
+        Клиенту возвращаются оба токена.
+Обновление токенов
+    Клиент отправляет refresh token.
+    Сервер:
+    Проверяет наличие хэша в базе.
+    Проверяет срок действия токена.
+    Генерирует новый access и refresh токены.
+    Старый refresh token удаляется (или хранится для логов).
+    Новый refresh token записывается в базу.
+Обновление аватарки
+    Пользователь загружает файл аватарки.
+    Сервер сохраняет изображение (например, в S3, локально или в базу как blob).
+    URL сохраняется в поле avatar_url таблицы users.
+
+
+
+
+
+REDIS:
+
+Refresh токены
+    Key: refresh:{user_id}
+    Value: token_hash
+    TTL: время жизни (например, 7 дней)
+Blacklist для access токенов
+    Key: blacklist:{token_id}
+    Value: true
+    TTL: время жизни токена (например, 15 минут)
