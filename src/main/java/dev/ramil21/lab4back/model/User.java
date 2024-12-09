@@ -31,7 +31,7 @@ public class User {
     private String salt;
 
     @Column(name = "is_verified", nullable = false)
-    private Boolean isVerified = false;
+    private Boolean isVerified;
 
     @Column(name = "verification_token", unique = true)
     private String verificationToken;

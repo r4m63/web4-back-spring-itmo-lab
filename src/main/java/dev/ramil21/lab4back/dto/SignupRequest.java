@@ -1,16 +1,17 @@
-package dev.ramil21.lab4back.dto.auth;
+package dev.ramil21.lab4back.dto;
 
-import dev.ramil21.lab4back.model.Role;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.extern.jackson.Jacksonized;
 
 @Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class RegisterRequest {
+@Jacksonized
+public class SignupRequest {
     private String email;
     private String password;
 }
