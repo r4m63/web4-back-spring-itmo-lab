@@ -2,9 +2,11 @@ package dev.ramil21.lab4back.controller;
 
 import dev.ramil21.lab4back.dto.RefreshTokenRequest;
 import dev.ramil21.lab4back.dto.UserCredentialsRequest;
-import dev.ramil21.lab4back.dto.TokensResponse;
+import dev.ramil21.lab4back.dto.AccessToken;
+import dev.ramil21.lab4back.dto.VerificationToken;
 import dev.ramil21.lab4back.service.AuthService;
 import dev.ramil21.lab4back.util.MailUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -32,22 +34,22 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping("/signup/verification") // TODO: remake to POST
-    public ResponseEntity<TokensResponse> doSignupVerification(@RequestParam("token") String token) {
-        TokensResponse response = authService.verification(token);
-        return ResponseEntity.ok(response);
+    @PostMapping("/signup/verification")
+    public ResponseEntity<AccessToken> doSignupVerification(@RequestBody VerificationToken request, HttpServletResponse response) {
+        AccessToken res = authService.verification(request.getToken(), response);
+        return ResponseEntity.ok(res);
     }
 
-    @GetMapping("/login") // TODO: remake to POST
-    public ResponseEntity<TokensResponse> doLogin(@RequestParam("email") String email, @RequestParam("password") String password) {
-        TokensResponse response = authService.login(email, password);
-        return ResponseEntity.ok(response);
+    @PostMapping("/signin")
+    public ResponseEntity<AccessToken> doSignin(@RequestBody UserCredentialsRequest request, HttpServletResponse response) {
+        AccessToken res = authService.login(request.getEmail(), request.getPassword(), response);
+        return ResponseEntity.ok(res);
     }
 
     @PostMapping("refresh-tokens")
-    public ResponseEntity<TokensResponse> doRefreshTokens(@RequestBody RefreshTokenRequest request) {
-        TokensResponse response = authService.refreshTokens(request.getRefreshToken());
-        return ResponseEntity.ok(response);
+    public ResponseEntity<AccessToken> doRefreshTokens(@RequestBody RefreshTokenRequest request, HttpServletResponse response) {
+        AccessToken res = authService.refreshTokens(request.getRefreshToken(), response);
+        return ResponseEntity.ok(res);
     }
 
 

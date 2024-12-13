@@ -1,6 +1,6 @@
 package dev.ramil21.lab4back.service;
 
-import dev.ramil21.lab4back.dto.TokensResponse;
+import dev.ramil21.lab4back.dto.AccessToken;
 import dev.ramil21.lab4back.model.RefreshToken;
 import dev.ramil21.lab4back.model.Role;
 import dev.ramil21.lab4back.model.User;
@@ -10,13 +10,16 @@ import dev.ramil21.lab4back.util.MailUtil;
 import dev.ramil21.lab4back.util.PasswordUtil;
 import dev.ramil21.lab4back.util.TokenUtil;
 import dev.ramil21.lab4back.util.VerificationUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -47,7 +50,7 @@ public class AuthService {
 
         String verificationToken = verificationUtil.generateVerificationToken();
         // TODO: вынести в ENUM http://localhost:8080 - как BASE_URL и все ENUMы всех путей тоже
-        String verificationUrl = verificationUtil.createVerificationUrlByToken("http://localhost:8080", verificationToken);
+        String verificationUrl = verificationUtil.createVerificationUrlByToken("http://localhost:5174", verificationToken);
         var user = User.builder()
                 .email(email)
                 .passwordHash(passwordUtil.hashPassword(password))
@@ -62,7 +65,7 @@ public class AuthService {
         mailUtil.send(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт" + verificationUrl);
     }
 
-    public TokensResponse verification(String token) {
+    public AccessToken verification(String token, HttpServletResponse response) {
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired verification token"));
         if (user.getIsVerified()) {
@@ -74,18 +77,29 @@ public class AuthService {
 
         String accessToken = tokenUtil.generateAccessToken(user.getEmail(), user.getRole().toString(), user.getId());
         String refreshToken = tokenUtil.generateRefreshToken(user.getEmail());
-        RefreshToken dbRefreshToken = RefreshToken.builder()
-                .token(refreshToken)
-                .user(user)
-                .expiresAt(LocalDateTime.now().plusDays(7))
-                .createdAt(LocalDateTime.now())
-                .build();
-        refreshTokenRepository.save(dbRefreshToken);
 
-        return new TokensResponse(accessToken, refreshToken);
+        Optional<RefreshToken> existingToken = refreshTokenRepository.findByToken(refreshToken);
+        if (existingToken.isPresent()) {
+            // Если токен уже существует, обновляем его (или можно удалить старый)
+            RefreshToken tokenToUpdate = existingToken.get();
+            tokenToUpdate.setExpiresAt(LocalDateTime.now().plusDays(7));  // Обновляем срок действия
+            refreshTokenRepository.save(tokenToUpdate);
+        } else {
+            RefreshToken dbRefreshToken = RefreshToken.builder()
+                    .token(refreshToken)
+                    .user(user)
+                    .expiresAt(LocalDateTime.now().plusDays(7))
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            refreshTokenRepository.save(dbRefreshToken);
+        }
+
+        response.setHeader(HttpHeaders.SET_COOKIE, "refreshToken=" + refreshToken + "; HttpOnly; Secure; SameSite=Strict; Max-Age=604800");
+
+        return new AccessToken(accessToken);
     }
 
-    public TokensResponse login(String email, String password) {
+    public AccessToken login(String email, String password, HttpServletResponse response) {
         final User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials")); //TODO: fix http status + description
 
@@ -102,10 +116,13 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(dbRefreshToken);
 
-        return new TokensResponse(accessToken, refreshToken);
+        response.setHeader(HttpHeaders.SET_COOKIE, "refreshToken=" + refreshToken + "; HttpOnly; Secure; SameSite=Strict; Max-Age=604800");
+
+
+        return new AccessToken(accessToken);
     }
 
-    public TokensResponse refreshTokens(String inputUserRefreshToken) {
+    public AccessToken refreshTokens(String inputUserRefreshToken, HttpServletResponse response) {
         if (tokenUtil.isTokenExpired(inputUserRefreshToken))
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token has expired");
 
@@ -122,6 +139,8 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(dbRefreshToken);
 
-        return new TokensResponse(accessToken, refreshToken);
+        response.setHeader(HttpHeaders.SET_COOKIE, "refreshToken=" + refreshToken + "; HttpOnly; Secure; SameSite=Strict; Max-Age=604800");
+
+        return new AccessToken(accessToken);
     }
 }

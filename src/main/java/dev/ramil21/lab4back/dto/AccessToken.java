@@ -5,8 +5,7 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class TokensResponse {
-    //@JsonProperty("access_token")
+public class AccessToken {
+    //@JsonProperty("accessToken")
     private String accessToken;
-    private String refreshToken;
 }
