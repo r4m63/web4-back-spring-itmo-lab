@@ -1,25 +1,31 @@
-CREATE TABLE users
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS refresh_token;
+
+DELETE FROM users;
+DELETE FROM refresh_token;
+
+
+CREATE TABLE IF NOT EXISTS users
 (
     id                 SERIAL PRIMARY KEY,
-    email              VARCHAR(255) UNIQUE NOT NULL,
-    password_hash      TEXT                NOT NULL,
-    salt               TEXT                NOT NULL,
-    is_verified        BOOLEAN                      DEFAULT FALSE,
+    email              VARCHAR(255) UNIQUE,
+    password_hash      TEXT,
+    is_verified        BOOLEAN     DEFAULT FALSE,
     verification_token TEXT UNIQUE,
-    avatar_url         TEXT                         DEFAULT NULL,
-    role               VARCHAR(50)         NOT NULL DEFAULT 'USER', -- Роли: 'USER', 'ADMIN'
-    created_at         TIMESTAMP                    DEFAULT CURRENT_TIMESTAMP,
-    updated_at         TIMESTAMP                    DEFAULT CURRENT_TIMESTAMP
+    avatar_url         TEXT        DEFAULT NULL,
+    role               VARCHAR(50) DEFAULT 'USER', -- Роли: 'USER', 'ADMIN'
+    created_at         TIMESTAMP   DEFAULT CURRENT_TIMESTAMP,
+    updated_at         TIMESTAMP   DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE refresh_token
+CREATE TABLE IF NOT EXISTS refresh_token
 (
     id         SERIAL PRIMARY KEY,
-    token_hash TEXT UNIQUE NOT NULL,
+    token      TEXT UNIQUE,
     user_id    INT REFERENCES users (id) ON DELETE CASCADE,
     device_on  TEXT, -- UUID
     is_revoked BOOLEAN   DEFAULT FALSE,
     revoked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    expires_at TIMESTAMP   NOT NULL,
+    expires_at TIMESTAMP
 );
 

@@ -22,26 +22,26 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "token_hash", nullable = false, unique = true)
-    private String tokenHash;
+    @Column(name = "token", unique = true)
+    private String token;
 
     @ManyToOne
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "user_id")
     private User user;
 
     @Column(name = "device_on")
     private String deviceOn;
 
-    @Column(name = "is_revoked", nullable = false)
+    @Column(name = "is_revoked")
     private Boolean isRevoked = false;
 
     @Column(name = "revoked_at")
     private LocalDateTime revokedAt;
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "expires_at")
     private LocalDateTime expiresAt;
 
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
 }

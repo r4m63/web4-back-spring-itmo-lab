@@ -11,7 +11,8 @@ import lombok.extern.jackson.Jacksonized;
 @AllArgsConstructor
 @NoArgsConstructor
 @Jacksonized
-public class SignupRequest {
+public class UserCredentialsRequest {
+    private String username;
     private String email;
     private String password;
 }

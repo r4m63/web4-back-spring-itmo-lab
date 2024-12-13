@@ -6,19 +6,12 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.security.SecureRandom;
 import java.util.Base64;
 
-/**
- * Signup verification util service
- */
+
 @Component
 public class VerificationUtil {
     private static final int TOKEN_LENGTH = 64; // Длина токена в байтах
     private final SecureRandom secureRandom = new SecureRandom();
 
-    /**
-     * Генерирует уникальный токен для верификации.
-     *
-     * @return уникальная строка токена
-     */
     public String generateVerificationToken() {
         byte[] randomBytes = new byte[TOKEN_LENGTH];
         secureRandom.nextBytes(randomBytes);

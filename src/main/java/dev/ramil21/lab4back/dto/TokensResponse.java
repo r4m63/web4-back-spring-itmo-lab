@@ -5,7 +5,8 @@ import lombok.*;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class SignupVerificationResponse {
+public class TokensResponse {
+    //@JsonProperty("access_token")
     private String accessToken;
     private String refreshToken;
 }

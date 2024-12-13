@@ -27,9 +27,6 @@ public class User {
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
-    @Column(name = "salt")
-    private String salt;
-
     @Column(name = "is_verified", nullable = false)
     private Boolean isVerified;
 

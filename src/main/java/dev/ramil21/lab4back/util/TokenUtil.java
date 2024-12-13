@@ -21,13 +21,10 @@ public class TokenUtil {
         return generateToken(email, role, id, ACCESS_TOKEN_VALIDITY);
     }
 
-    // Генерация Refresh Token
     public String generateRefreshToken(String email) {
         return generateToken(email, null, null, REFRESH_TOKEN_VALIDITY);
     }
 
-
-    // Общий метод генерации токенов
     private String generateToken(String email, String role, Long id, long validity) {
         Map<String, Object> claims = new HashMap<>();
         if (role != null) {
@@ -42,7 +39,6 @@ public class TokenUtil {
                 .compact();
     }
 
-    // Валидация токена
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
@@ -53,8 +49,7 @@ public class TokenUtil {
         }
     }
 
-    // Извлечение username из токена
-    public String getUsernameFromToken(String token) {
+    public String getEmailFromToken(String token) {
         return Jwts.parserBuilder()
                 .setSigningKey(key)
                 .build()
@@ -63,7 +58,6 @@ public class TokenUtil {
                 .getSubject();
     }
 
-    // Извлечение ролей из токена
     public String getRoleFromToken(String token) {
         Claims claims = Jwts.parserBuilder()
                 .setSigningKey(key)
@@ -72,42 +66,19 @@ public class TokenUtil {
                 .getBody();
         return claims.get("roles", String.class);
     }
+
+    public boolean isTokenExpired(String token) {
+        try {
+            Date expirationDate = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody()
+                    .getExpiration();
+            return expirationDate.before(new Date());
+        } catch (JwtException | IllegalArgumentException e) {
+            // Логика обработки ошибок токена
+            return true; // Считаем, что истек, если не удалось проверить
+        }
+    }
 }
-
-// Интеграция с Spring Security
-// Создайте фильтр для проверки токенов и интеграции с контекстом Spring Security.
-// Добавьте фильтр в цепочку фильтров Spring Security.
-
-//@Component
-//public class JwtAuthenticationFilter extends OncePerRequestFilter {
-//
-//    private final TokenUtil tokenUtil;
-//
-//    public JwtAuthenticationFilter(TokenUtil tokenUtil) {
-//        this.tokenUtil = tokenUtil;
-//    }
-//
-//    @Override
-//    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-//            throws ServletException, IOException {
-//        String header = request.getHeader("Authorization");
-//        if (header != null && header.startsWith("Bearer ")) {
-//            String token = header.substring(7);
-//            if (tokenUtil.validateToken(token)) {
-//                String username = tokenUtil.getUsernameFromToken(token);
-//
-//                UsernamePasswordAuthenticationToken authentication =
-//                        new UsernamePasswordAuthenticationToken(username, null, null);
-//                authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-//                SecurityContextHolder.getContext().setAuthentication(authentication);
-//            }
-//        }
-//
-//        filterChain.doFilter(request, response);
-//    }
-//}
-
-//@Override
-//protected void configure(HttpSecurity http) throws Exception {
-//    http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-//}

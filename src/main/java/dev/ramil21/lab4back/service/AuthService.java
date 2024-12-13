@@ -1,6 +1,6 @@
 package dev.ramil21.lab4back.service;
 
-import dev.ramil21.lab4back.dto.SignupVerificationResponse;
+import dev.ramil21.lab4back.dto.TokensResponse;
 import dev.ramil21.lab4back.model.RefreshToken;
 import dev.ramil21.lab4back.model.Role;
 import dev.ramil21.lab4back.model.User;
@@ -22,30 +22,29 @@ import java.time.LocalDateTime;
 @RequiredArgsConstructor
 public class AuthService {
 
-    @Autowired
     PasswordUtil passwordUtil;
-
-    @Autowired
     VerificationUtil verificationUtil;
-
-    @Autowired
     TokenUtil tokenUtil;
-
-    @Autowired
     MailUtil mailUtil;
 
-    @Autowired
     UserRepository userRepository;
+    RefreshTokenRepository refreshTokenRepository;
 
     @Autowired
-    RefreshTokenRepository refreshTokenRepository;
+    public AuthService(PasswordUtil passwordUtil, VerificationUtil verificationUtil, TokenUtil tokenUtil,
+                       MailUtil mailUtil, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository) {
+        this.passwordUtil = passwordUtil;
+        this.verificationUtil = verificationUtil;
+        this.tokenUtil = tokenUtil;
+        this.mailUtil = mailUtil;
+        this.userRepository = userRepository;
+        this.refreshTokenRepository = refreshTokenRepository;
+    }
 
     public void signup(String email, String password) {
         if (userRepository.existsByEmail(email))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User account already exists for provided email-id");
 
-        System.out.println(email);
-        System.out.println(password);
         String verificationToken = verificationUtil.generateVerificationToken();
         // TODO: вынести в ENUM http://localhost:8080 - как BASE_URL и все ENUMы всех путей тоже
         String verificationUrl = verificationUtil.createVerificationUrlByToken("http://localhost:8080", verificationToken);
@@ -63,28 +62,66 @@ public class AuthService {
         mailUtil.send(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт" + verificationUrl);
     }
 
-    public SignupVerificationResponse verification(String token) {
+    public TokensResponse verification(String token) {
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired verification token"));
         if (user.getIsVerified()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User already verified");
         }
         user.setIsVerified(true);
-        user.setVerificationToken(null); // Удалить токен, чтобы он больше не использовался
+        user.setVerificationToken(null);
         userRepository.save(user);
 
         String accessToken = tokenUtil.generateAccessToken(user.getEmail(), user.getRole().toString(), user.getId());
         String refreshToken = tokenUtil.generateRefreshToken(user.getEmail());
-
         RefreshToken dbRefreshToken = RefreshToken.builder()
-                .tokenHash(refreshToken)
+                .token(refreshToken)
                 .user(user)
-                .deviceOn("Unknown Device")
                 .expiresAt(LocalDateTime.now().plusDays(7))
                 .createdAt(LocalDateTime.now())
                 .build();
         refreshTokenRepository.save(dbRefreshToken);
 
-        return new SignupVerificationResponse(accessToken, refreshToken);
+        return new TokensResponse(accessToken, refreshToken);
+    }
+
+    public TokensResponse login(String email, String password) {
+        final User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials")); //TODO: fix http status + description
+
+        if (!passwordUtil.verifyPassword(password, user.getPasswordHash()))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials"); //TODO: fix http status + description
+
+        String accessToken = tokenUtil.generateAccessToken(user.getEmail(), user.getRole().toString(), user.getId());
+        String refreshToken = tokenUtil.generateRefreshToken(user.getEmail());
+        RefreshToken dbRefreshToken = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusDays(7))
+                .createdAt(LocalDateTime.now())
+                .build();
+        refreshTokenRepository.save(dbRefreshToken);
+
+        return new TokensResponse(accessToken, refreshToken);
+    }
+
+    public TokensResponse refreshTokens(String inputUserRefreshToken) {
+        if (tokenUtil.isTokenExpired(inputUserRefreshToken))
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token has expired");
+
+        final var user = userRepository.findByEmail(tokenUtil.getEmailFromToken(inputUserRefreshToken))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST));
+
+        String accessToken = tokenUtil.generateAccessToken(user.getEmail(), user.getRole().toString(), user.getId());
+        String refreshToken = tokenUtil.generateRefreshToken(user.getEmail());
+        RefreshToken dbRefreshToken = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusDays(7))
+                .createdAt(LocalDateTime.now())
+                .build();
+        refreshTokenRepository.save(dbRefreshToken);
+
+        return new TokensResponse(accessToken, refreshToken);
     }
 }
