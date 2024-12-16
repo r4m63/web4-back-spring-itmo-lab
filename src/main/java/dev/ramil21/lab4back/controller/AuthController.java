@@ -1,9 +1,6 @@
 package dev.ramil21.lab4back.controller;
 
-import dev.ramil21.lab4back.dto.RefreshTokenRequest;
-import dev.ramil21.lab4back.dto.UserCredentialsRequest;
-import dev.ramil21.lab4back.dto.AccessToken;
-import dev.ramil21.lab4back.dto.VerificationToken;
+import dev.ramil21.lab4back.dto.*;
 import dev.ramil21.lab4back.service.AuthService;
 import dev.ramil21.lab4back.util.MailUtil;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,7 +8,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 //@RequestMapping("/api/auth")
@@ -37,21 +37,27 @@ public class AuthController {
     @PostMapping("/signup/verification")
     public ResponseEntity<AccessToken> doSignupVerification(@RequestBody VerificationToken request, HttpServletResponse response) {
         AccessToken res = authService.verification(request.getToken(), response);
-        return ResponseEntity.ok(res);
+        return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
     @PostMapping("/signin")
     public ResponseEntity<AccessToken> doSignin(@RequestBody UserCredentialsRequest request, HttpServletResponse response) {
-        AccessToken res = authService.login(request.getEmail(), request.getPassword(), response);
-        return ResponseEntity.ok(res);
+        AccessToken res = authService.signin(request.getEmail(), request.getPassword(), response);
+        return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
     @PostMapping("refresh-tokens")
     public ResponseEntity<AccessToken> doRefreshTokens(@RequestBody RefreshTokenRequest request, HttpServletResponse response) {
         AccessToken res = authService.refreshTokens(request.getRefreshToken(), response);
-        return ResponseEntity.ok(res);
+        return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
+    // TODO: посмотреть что с request.getCredentials(), что можно полезного брать от туда
+    @PostMapping("/google-login")
+    public ResponseEntity<AccessToken> doGoogleLogin(@RequestBody GoogleLoginRequest request, HttpServletResponse response) throws Exception {
+        AccessToken res = authService.googleLogin(request.getToken(), response);
+        return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
 
 
     @GetMapping("/mail")

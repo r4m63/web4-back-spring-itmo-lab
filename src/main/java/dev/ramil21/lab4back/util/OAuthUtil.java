@@ -17,17 +17,6 @@ public class OAuthUtil {
             OAuth2User oAuth2User = oauthToken.getPrincipal();
             if (oAuth2User != null) {
                 Map<String, Object> attributes = oAuth2User.getAttributes();
-//                Optional<User> optionalUser = userRepository.findById((String) attributes.get("sub"));
-//                if (optionalUser.isEmpty()){
-//                    User user = new User();
-//                    user.setId((String) attributes.get("sub"));
-//                    user.setGiven_name((String) attributes.get("given_name"));
-//                    user.setFamily_name((String) attributes.get("family_name"));
-//                    user.setName((String) attributes.get("name"));
-//                    user.setEmail((String) attributes.get("email"));
-//                    user.setPicture((String) attributes.get("picture"));
-//                    userRepository.save(user);
-//                }
                 return "Hello, " + attributes.get("given_name") + " | " + attributes.get("family_name") + " | " + attributes.get("email") + " | " + attributes.get("username") + " | " + attributes.get("picture") + " | ";
             }
         }

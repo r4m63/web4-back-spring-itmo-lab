@@ -16,6 +16,7 @@ public class MailUtil {
         this.mailSender = mailSender;
     }
 
+    //TODO: method to send html mail context
     public void send(String to, String subject, String body) {
         try {
             SimpleMailMessage mailMessage = new SimpleMailMessage();

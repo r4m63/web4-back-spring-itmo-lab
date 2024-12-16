@@ -13,6 +13,7 @@ import dev.ramil21.lab4back.util.VerificationUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class AuthService {
+
+    @Value("${spring.security.oauth2.client.registration.google.client-id}")
+    private String googleClientId;
 
     PasswordUtil passwordUtil;
     VerificationUtil verificationUtil;
@@ -44,6 +48,7 @@ public class AuthService {
         this.refreshTokenRepository = refreshTokenRepository;
     }
 
+    // TODO: пофиксить логику, человек может быть зареган через OAuth и его не дает зарагестрировать, надо поставить флаг
     public void signup(String email, String password) {
         if (userRepository.existsByEmail(email))
             throw new ResponseStatusException(HttpStatus.CONFLICT, "User account already exists for provided email-id");
@@ -62,9 +67,10 @@ public class AuthService {
                 .build();
         var savedUser = userRepository.save(user);
 
-        mailUtil.send(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт" + verificationUrl);
+        mailUtil.send(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт: " + verificationUrl);
     }
 
+    // TODO: пофиксить логику, человек может быть зареган через OAuth и его не дает зарагестрировать, надо поставить флаг
     public AccessToken verification(String token, HttpServletResponse response) {
         User user = userRepository.findByVerificationToken(token)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired verification token"));
@@ -99,7 +105,8 @@ public class AuthService {
         return new AccessToken(accessToken);
     }
 
-    public AccessToken login(String email, String password, HttpServletResponse response) {
+    // TODO: пофиксить логику, человек может быть зареган через OAuth и его не дает зарагестрировать, надо поставить флаг
+    public AccessToken signin(String email, String password, HttpServletResponse response) {
         final User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid login credentials")); //TODO: fix http status + description
 
@@ -118,10 +125,10 @@ public class AuthService {
 
         response.setHeader(HttpHeaders.SET_COOKIE, "refreshToken=" + refreshToken + "; HttpOnly; Secure; SameSite=Strict; Max-Age=604800");
 
-
         return new AccessToken(accessToken);
     }
 
+    // TODO: пофиксить логику, человек может быть зареган через OAuth и его не дает зарагестрировать, надо поставить флаг
     public AccessToken refreshTokens(String inputUserRefreshToken, HttpServletResponse response) {
         if (tokenUtil.isTokenExpired(inputUserRefreshToken))
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Refresh token has expired");
@@ -143,4 +150,48 @@ public class AuthService {
 
         return new AccessToken(accessToken);
     }
+
+    // TODO: fix this method: need to take payloads from token | example of googleToken bellow:
+    // eyJhbGciOiJSUzI1NiIsImtpZCI6IjU2NGZlYWNlYzNlYmRmYWE3MzExYjlkOGU3M2M0MjgxOGYyOTEyNjQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIzNjM2ODkzNzcyMDEtaTdkMjNnMDhmMXFkZWs1c2hranVqczQ4Mmw4cGtqcm4uYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIzNjM2ODkzNzcyMDEtaTdkMjNnMDhmMXFkZWs1c2hranVqczQ4Mmw4cGtqcm4uYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTAyMTI1OTkwMDgyODMzNzg5NDQiLCJlbWFpbCI6InJtLnRqLjc3N0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmJmIjoxNzM0MTQ2NjUxLCJuYW1lIjoicmFtaWwiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSkZOUWJwaU1mZy1JRFZEeE1UcTItQmhSQjhPaFo5ZE5TTU9mOC1rNkZEbF9IeVBIVT1zOTYtYyIsImdpdmVuX25hbWUiOiJyYW1pbCIsImlhdCI6MTczNDE0Njk1MSwiZXhwIjoxNzM0MTUwNTUxLCJqdGkiOiJhN2RhMzQ5ZmE5ZDlmNzc4NWViOTQ5YTllNGNiODYyOGEyMmI0NzEyIn0.jYT8kNeEx3Vriq0afkCsoXCynstrZJv7kZQeMOYg223z3CV2PWdCOW7kYRA0Kr8Fc-MsdqOAUq6EtHQzUHRpy772b0ot1MEshAYVPh_o0GksMufznrOXLBngbjZ3wA_MqIK2F7F43GuCEm5QtFQCWeYRs0DMoJJ1O7LZx684DE6cOlh1wkGLBt_iYWNOVyFD6dCMXhroRHnNNGhdtNNO4Rkc6nBWFVg8rV3PZwgJC7cczws6D0MEt2a-E0t0-AqhZp3p3fJE9-wNFc1DEHxb7Errz0wFZ0DoaC9xqWyaGMJtQuzzA2Y1dU26YVqb0QxzZmZoqMWY5LMHu6JZNpMexQ
+    public AccessToken googleLogin(String googleToken, HttpServletResponse response) throws Exception {
+
+        String email = tokenUtil.getEmailFromGoogleToken(googleToken);
+
+        System.out.println("+--------------------------------------------------------------------------------------+");
+        System.out.println("|   EMAIL FROM GOOGLE TOKEN: " + email);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+
+        Optional<User> userOptional = userRepository.findByEmail(email);
+        User user;
+        if (userOptional.isPresent()) {
+            // Если пользователь найден, берем его из Optional
+            user = userOptional.get();
+        } else {
+            // Если пользователь не найден, создаем нового
+            user = User.builder()
+                    .email(email)
+                    .isVerified(true)
+                    .role(Role.USER)
+                    .createdAt(LocalDateTime.now())
+                    .updatedAt(LocalDateTime.now())
+                    .build();
+            user = userRepository.save(user);
+        }
+
+        String accessToken = tokenUtil.generateAccessToken(user.getEmail(), user.getRole().toString(), user.getId());
+        String refreshToken = tokenUtil.generateRefreshToken(user.getEmail());
+        RefreshToken dbRefreshToken = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiresAt(LocalDateTime.now().plusDays(7))
+                .createdAt(LocalDateTime.now())
+                .build();
+        refreshTokenRepository.save(dbRefreshToken);
+
+        response.setHeader(HttpHeaders.SET_COOKIE, "refreshToken=" + refreshToken + "; HttpOnly; Secure; SameSite=Strict; Max-Age=604800");
+
+        return new AccessToken(accessToken);
+    }
+
+
 }

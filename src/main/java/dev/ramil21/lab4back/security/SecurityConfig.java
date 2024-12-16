@@ -33,7 +33,11 @@ public class SecurityConfig {
                 .exceptionHandling(AbstractHttpConfigurer::disable) // Отключаем обработку исключений
                 .securityContext(AbstractHttpConfigurer::disable)  // Отключаем SecurityContext
                 .anonymous(AbstractHttpConfigurer::disable)        // Отключаем AnonymousAuthenticationFilter
-                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class); // Добавляем ваш фильтр
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // Добавляем ваш фильтр
+                .oauth2Login(oauth2 -> oauth2
+                        .loginPage("/login")    // Страница логина (если нужно)
+                        .failureUrl("/login?error=true") // Страница ошибки при неудачной авторизации
+                );
 
         return http.build();
     }
