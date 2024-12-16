@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
@@ -26,13 +25,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(authz -> authz
                         .anyRequest().permitAll()  // Разрешаем все запросы (можно настроить по своему)
                 )
-                .formLogin(AbstractHttpConfigurer::disable)       // Отключаем форму логина
-                .httpBasic(AbstractHttpConfigurer::disable)       // Отключаем HTTP Basic аутентификацию
-                .logout(AbstractHttpConfigurer::disable)          // Отключаем выход
-                .sessionManagement(AbstractHttpConfigurer::disable) // Отключаем управление сессиями
-                .exceptionHandling(AbstractHttpConfigurer::disable) // Отключаем обработку исключений
-                .securityContext(AbstractHttpConfigurer::disable)  // Отключаем SecurityContext
-                .anonymous(AbstractHttpConfigurer::disable)        // Отключаем AnonymousAuthenticationFilter
+                .formLogin(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
+                .sessionManagement(AbstractHttpConfigurer::disable)
+                .exceptionHandling(AbstractHttpConfigurer::disable)
+                .securityContext(AbstractHttpConfigurer::disable)
+                .anonymous(AbstractHttpConfigurer::disable)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class) // Добавляем ваш фильтр
                 .oauth2Login(oauth2 -> oauth2
                         .loginPage("/login")    // Страница логина (если нужно)

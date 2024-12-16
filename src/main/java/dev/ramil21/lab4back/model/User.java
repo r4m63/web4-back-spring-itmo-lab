@@ -33,6 +33,9 @@ public class User {
     @Column(name = "verification_token", unique = true)
     private String verificationToken;
 
+    @Column(name = "is_google_auth")
+    private Boolean isGoogleAuth;
+
     @Column(name = "avatar_url")
     private String avatarUrl;
 
