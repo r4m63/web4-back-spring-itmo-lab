@@ -6,6 +6,7 @@ import dev.ramil21.lab4back.model.Role;
 import dev.ramil21.lab4back.model.User;
 import dev.ramil21.lab4back.repository.RefreshTokenRepository;
 import dev.ramil21.lab4back.repository.UserRepository;
+import dev.ramil21.lab4back.security.ApiPath;
 import dev.ramil21.lab4back.util.PasswordUtil;
 import dev.ramil21.lab4back.util.TokenUtil;
 import dev.ramil21.lab4back.util.VerificationUtil;
@@ -59,8 +60,7 @@ public class AuthService {
         }
 
         String verificationToken = verificationUtil.generateVerificationToken();
-        // TODO: вынести в ENUM http://localhost:8080 - как BASE_URL и все ENUMы всех путей тоже (вместе в один enum)
-        String verificationUrl = verificationUtil.createVerificationUrlByToken("http://localhost:5174", verificationToken);
+        String verificationUrl = verificationUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), verificationToken);
         var user = User.builder()
                 .email(email)
                 .passwordHash(passwordUtil.hashPassword(password))
@@ -72,7 +72,7 @@ public class AuthService {
                 .build();
         var savedUser = userRepository.save(user);
 
-        //mailUtil.sendSimpleMessage(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт: " + verificationUrl);
+        mailUtil.sendSimpleMessage(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт: " + verificationUrl);
         mailUtil.sendHtmlMessage(
                 savedUser.getEmail(),
                 MailTemplates.SUBJECT_REGISTRATION.get(),
