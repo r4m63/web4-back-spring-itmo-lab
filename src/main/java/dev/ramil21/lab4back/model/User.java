@@ -21,7 +21,7 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true, length = 255)
+    @Column(unique = true)
     private String email;
 
     @Column(name = "password_hash")

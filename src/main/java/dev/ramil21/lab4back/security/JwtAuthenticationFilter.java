@@ -5,67 +5,111 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Set;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final TokenUtil tokenUtil;
 
+    @Autowired
     public JwtAuthenticationFilter(TokenUtil tokenUtil) {
         this.tokenUtil = tokenUtil;
     }
+
+    private static final Set<String> SKIP_PATHS = Set.of(
+            "/auth/signup",
+            "/auth/login",
+            "/auth/restorePassword"
+    );
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String jwtToken;
-        final String email;
-
-        // Пропускаем запросы на публичные маршруты (например, /signup, /login)
-        if (request.getRequestURI().equals("/signup") || request.getRequestURI().equals("/signup/verification") ||
-                request.getRequestURI().equals("/login") || request.getRequestURI().equals("/refresh-tokens") ||
-                request.getRequestURI().equals("/google-login")) {
+        String path = request.getRequestURI();
+        // Пропускаем запросы для путей, не требующих авторизации
+        if (SKIP_PATHS.contains(path)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // Проверяем, есть ли заголовок Authorization и начинается ли он с Bearer
+        final String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        jwtToken = authHeader.substring(7); // Убираем "Bearer "
+        final String jwtToken = authHeader.substring(7); // Убираем "Bearer "
         try {
-            // Проверяем токен
             if (!tokenUtil.validateToken(jwtToken)) {
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                 return;
             }
 
-            // Получаем email из токена
-            email = tokenUtil.getEmailFromToken(jwtToken);
+            String email = tokenUtil.getEmailFromToken(jwtToken);
+
+            // Помещаем email напрямую в SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(new SimpleAuthentication(email));
         } catch (Exception e) {
-            // Если токен недействителен или истек
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             return;
         }
 
-        // Устанавливаем аутентификацию
-        UsernamePasswordAuthenticationToken authToken =
-                new UsernamePasswordAuthenticationToken(email, null, null); // Здесь можно добавить роли
-        authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-
         filterChain.doFilter(request, response);
     }
+
+    // Вспомогательный класс для хранения email
+    private static class SimpleAuthentication implements Authentication {
+        private final String email;
+
+        public SimpleAuthentication(String email) {
+            this.email = email;
+        }
+
+        @Override
+        public String getPrincipal() {
+            return email; // principal — это email
+        }
+
+        // Пустые реализации остальных методов Authentication
+        @Override
+        public Object getCredentials() {
+            return null;
+        }
+
+        @Override
+        public Object getDetails() {
+            return null;
+        }
+
+        @Override
+        public Collection<? extends GrantedAuthority> getAuthorities() {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return email;
+        }
+
+        @Override
+        public boolean isAuthenticated() {
+            return true;
+        }
+
+        @Override
+        public void setAuthenticated(boolean isAuthenticated) throws IllegalArgumentException {
+        }
+    }
+
 }

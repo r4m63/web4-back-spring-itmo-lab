@@ -1,6 +1,7 @@
 package dev.ramil21.lab4back.controller;
 
-import dev.ramil21.lab4back.dto.UserCredentialsRequest;
+import dev.ramil21.lab4back.dto.PointHitResponse;
+import dev.ramil21.lab4back.dto.UserPointRequest;
 import dev.ramil21.lab4back.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-//@RequestMapping("/api/auth")
+//@RequestMapping("/api/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -23,9 +24,9 @@ public class UserController {
     }
 
     @PostMapping("/check-point")
-    public ResponseEntity<Void> doSignup(@RequestBody UserCredentialsRequest request) {
-        //userService.signup(request.getEmail(), request.getPassword());
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<PointHitResponse> checkPoint(@RequestBody UserPointRequest request) {
+        PointHitResponse res = userService.checkPointHit(request.getX(), request.getY(), request.getR());
+        return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
 }
