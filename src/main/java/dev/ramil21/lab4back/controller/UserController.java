@@ -2,6 +2,7 @@ package dev.ramil21.lab4back.controller;
 
 import dev.ramil21.lab4back.dto.PointHitResponse;
 import dev.ramil21.lab4back.dto.UserPointRequest;
+import dev.ramil21.lab4back.model.Point;
 import dev.ramil21.lab4back.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 @RestController
 //@RequestMapping("/api/user")
@@ -29,9 +32,10 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
-//    @PostMapping("/all-points")
-//    public ResponseEntity<Void> allPoints() {
-//
-//    }
+    @PostMapping("/all-points")
+    public ResponseEntity<List<Point>> allPoints() {
+        List<Point> res = userService.getAllPoints();
+        return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
 
 }

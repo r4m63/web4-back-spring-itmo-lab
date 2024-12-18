@@ -13,6 +13,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -47,6 +49,19 @@ public class UserService {
         pointRepository.save(point);
 
         return new PointHitResponse(x, y, r, isHit);
+    }
+
+    public List<Point> getAllPoints() {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (email != null) {
+            System.out.println("Email from JWT: " + email);
+        } else {
+            System.out.println("No email found in JWT token.");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "User not found"));
+
+        return pointRepository.findByUserId(user.getId());
     }
 
 }
