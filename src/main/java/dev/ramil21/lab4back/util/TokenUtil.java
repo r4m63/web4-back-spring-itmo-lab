@@ -23,7 +23,7 @@ import java.util.Map;
 public class TokenUtil {
     private static final String GOOGLE_PUBLIC_KEYS_URL = "https://www.googleapis.com/oauth2/v3/certs";
     private static final String SECRET_KEY = "YourSuperSecretKeyForJWT_ChangeThisKey12345";
-    private static final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 15; // 15 минут
+    private static final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 60 * 24 * 7; // 15 минут
     private static final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24 * 7; // 7 дней
 
     private final Key key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());

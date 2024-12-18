@@ -178,7 +178,6 @@ public class AuthService {
         } else {
             user = User.builder() // Если пользователь не найден, создаем нового
                     .email(email)
-                    .isVerified(true)
                     .isGoogleAuth(true)
                     .role(Role.USER)
                     .createdAt(LocalDateTime.now())

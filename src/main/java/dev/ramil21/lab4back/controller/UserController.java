@@ -29,4 +29,9 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
+//    @PostMapping("/all-points")
+//    public ResponseEntity<Void> allPoints() {
+//
+//    }
+
 }
