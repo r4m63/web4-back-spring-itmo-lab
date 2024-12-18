@@ -28,6 +28,11 @@ public class UserService {
 
     public PointHitResponse checkPointHit(float x, float y, float r) {
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (email != null) {
+            System.out.println("Email from JWT: " + email);
+        } else {
+            System.out.println("No email found in JWT token.");
+        }
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "User not found"));
 

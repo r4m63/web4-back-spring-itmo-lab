@@ -38,9 +38,16 @@ public class TokenUtil {
 
     private String generateToken(String email, String role, Long id, long validity) {
         Map<String, Object> claims = new HashMap<>();
-        if (role != null) {
-            claims.put("roles", role); // Добавляем роль в токен
+        if (email != null) {
+            claims.put("email", email);
         }
+        if (role != null) {
+            claims.put("role", role);
+        }
+        if (id != null) {
+            claims.put("id", id);
+        }
+        claims.put("validity", validity);
         return Jwts.builder()
                 .setClaims(claims)
                 .setSubject(email)
@@ -55,9 +62,20 @@ public class TokenUtil {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            // Логирование ошибки и возврат false
-            // Можно использовать логирование для отслеживания проблем с токеном
             return false;
+        }
+    }
+
+    public Long getIdFromToken(String token) {
+        try {
+            Claims claims = Jwts.parserBuilder()
+                    .setSigningKey(key)
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+            return claims.get("id", Long.class);
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new RuntimeException("Invalid JWT token", e);
         }
     }
 
@@ -68,7 +86,7 @@ public class TokenUtil {
                     .build()
                     .parseClaimsJws(token)
                     .getBody()
-                    .getSubject();
+                    .get("email", String.class);
         } catch (JwtException | IllegalArgumentException e) {
             throw new RuntimeException("Invalid JWT token", e);
         }
@@ -81,7 +99,7 @@ public class TokenUtil {
                     .build()
                     .parseClaimsJws(token)
                     .getBody();
-            return claims.get("roles", String.class);
+            return claims.get("role", String.class);
         } catch (JwtException | IllegalArgumentException e) {
             throw new RuntimeException("Invalid JWT token", e);
         }
@@ -97,37 +115,24 @@ public class TokenUtil {
                     .getExpiration();
             return expirationDate.before(new Date());
         } catch (JwtException | IllegalArgumentException e) {
-            // Логирование ошибки и возвращаем true, если токен не валиден
             return true;
         }
     }
 
     public String getEmailFromGoogleToken(String googleToken) throws Exception {
         try {
-            // Декодируем JWT токен, чтобы получить kid (key ID)
             SignedJWT signedJWT = SignedJWT.parse(googleToken);
             String kid = signedJWT.getHeader().getKeyID();
-
-            // Получаем публичные ключи Google для верификации подписи
             JWKSet jwkSet = JWKSet.load(new URL(GOOGLE_PUBLIC_KEYS_URL));
-
-            // Ищем ключ, соответствующий kid
             JWK jwk = jwkSet.getKeyByKeyId(kid);
 
-            // Проверяем, что найденный ключ является RSA публичным ключом
             if (jwk instanceof RSAKey) {
                 RSAKey rsaKey = (RSAKey) jwk;
-
-                // Получаем публичный ключ
                 RSAPublicKey publicKey = rsaKey.toRSAPublicKey();
-
-                // Верифицируем подпись токена
                 RSASSAVerifier verifier = new RSASSAVerifier(publicKey);
                 if (!signedJWT.verify(verifier)) {
                     throw new RuntimeException("Invalid JWT signature");
                 }
-
-                // Извлекаем email из токена
                 return signedJWT.getJWTClaimsSet().getStringClaim("email");
             } else {
                 throw new RuntimeException("Public key is not RSA key");
