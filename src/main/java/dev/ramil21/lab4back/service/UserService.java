@@ -1,5 +1,6 @@
 package dev.ramil21.lab4back.service;
 
+import dev.ramil21.lab4back.dto.PointDTO;
 import dev.ramil21.lab4back.dto.PointHitResponse;
 import dev.ramil21.lab4back.model.Point;
 import dev.ramil21.lab4back.model.User;
@@ -14,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +53,25 @@ public class UserService {
         return new PointHitResponse(x, y, r, isHit);
     }
 
-    public List<Point> getAllPoints() {
+    public List<PointDTO> getAllPoints() {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (email != null) {
+            System.out.println("Email from JWT: " + email);
+        } else {
+            System.out.println("No email found in JWT token.");
+        }
+
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "User not found"));
+
+        List<Point> points = pointRepository.findByUserId(user.getId());
+
+        return points.stream()
+                .map(PointDTO::new)
+                .collect(Collectors.toList());
+    }
+
+    public void clearAllPoints() {
         String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (email != null) {
             System.out.println("Email from JWT: " + email);
@@ -61,7 +81,7 @@ public class UserService {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "User not found"));
 
-        return pointRepository.findByUserId(user.getId());
+        pointRepository.deleteAllByUserId(user.getId());
     }
 
 }

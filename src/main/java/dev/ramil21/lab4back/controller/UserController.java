@@ -1,5 +1,6 @@
 package dev.ramil21.lab4back.controller;
 
+import dev.ramil21.lab4back.dto.PointDTO;
 import dev.ramil21.lab4back.dto.PointHitResponse;
 import dev.ramil21.lab4back.dto.UserPointRequest;
 import dev.ramil21.lab4back.model.Point;
@@ -33,9 +34,15 @@ public class UserController {
     }
 
     @PostMapping("/all-points")
-    public ResponseEntity<List<Point>> allPoints() {
-        List<Point> res = userService.getAllPoints();
+    public ResponseEntity<List<PointDTO>> allPoints() {
+        List<PointDTO> res = userService.getAllPoints();
         return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
+
+    @PostMapping("/delete-points")
+    public ResponseEntity<Void> deleteAllPoints() {
+        userService.clearAllPoints();
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
 }

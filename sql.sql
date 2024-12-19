@@ -1,10 +1,13 @@
 DROP TABLE IF EXISTS users;
 DROP TABLE IF EXISTS refresh_token;
+DROP TABLE IF EXISTS points;
 
 DELETE
 FROM users;
 DELETE
 FROM refresh_token;
+DELETE
+FROM points;
 
 
 CREATE TABLE IF NOT EXISTS users
@@ -32,3 +35,13 @@ CREATE TABLE IF NOT EXISTS refresh_token
     expires_at TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS points
+(
+    id         SERIAL PRIMARY KEY,
+    user_id    INT REFERENCES users (id) ON DELETE CASCADE,
+    x          FLOAT,
+    y          FLOAT,
+    r          FLOAT,
+    res        BOOLEAN,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
