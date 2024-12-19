@@ -15,7 +15,7 @@ public class PointDTO {
     private float x;
     private float y;
     private float r;
-    private boolean result;
+    private boolean hit;
     private LocalDateTime createdAt;
 
     public PointDTO(Point point) {
@@ -23,7 +23,7 @@ public class PointDTO {
         this.x = point.getX();
         this.y = point.getY();
         this.r = point.getR();
-        this.result = point.isResult();
+        this.hit = point.isResult();
         this.createdAt = point.getCreatedAt();
     }
 }

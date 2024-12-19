@@ -1,8 +1,8 @@
 package dev.ramil21.lab4back.model;
 
+import jakarta.persistence.*;
 import lombok.*;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -34,7 +34,7 @@ public class User {
     private String verificationToken;
 
     @Column(name = "is_google_auth")
-    private Boolean isGoogleAuth;
+    private Boolean isGoogleAuth = false;
 
     @Column(name = "avatar_url")
     private String avatarUrl;

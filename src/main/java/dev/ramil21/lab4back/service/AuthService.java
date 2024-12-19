@@ -52,27 +52,45 @@ public class AuthService {
 
     public void signup(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
+
+        String verificationToken = verificationUtil.generateVerificationToken();
+        String verificationUrl = verificationUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), verificationToken);
+
         if (userOpt.isPresent()) {
+            // Если пользователь уже существует, но зарегистрирован через Google
+
             User user = userOpt.get();
-            if (!user.getIsGoogleAuth()) {
+            if (user.getIsGoogleAuth()) {
+                // Обновляем существующего пользователя
+                user.setPasswordHash(passwordUtil.hashPassword(password));
+                user.setIsVerified(false);
+                user.setVerificationToken(verificationToken);
+                user.setUpdatedAt(LocalDateTime.now());
+                var savedUser = userRepository.save(user);
+                mailUtil.sendHtmlMessage(
+                        savedUser.getEmail(),
+                        MailTemplates.SUBJECT_REGISTRATION.get(),
+                        MailTemplates.BODY_REGISTRATION.set(verificationUrl)
+                );
+                return;
+            } else {
+                // Если это обычный пользователь, выбрасываем ошибку
                 throw new ResponseStatusException(HttpStatus.CONFLICT, "User account already exists for provided email-id");
             }
         }
 
-        String verificationToken = verificationUtil.generateVerificationToken();
-        String verificationUrl = verificationUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), verificationToken);
         var user = User.builder()
                 .email(email)
                 .passwordHash(passwordUtil.hashPassword(password))
                 .isVerified(false)
                 .verificationToken(verificationToken)
                 .role(Role.USER)
+                .isGoogleAuth(false)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
         var savedUser = userRepository.save(user);
 
-        mailUtil.sendSimpleMessage(savedUser.getEmail(), "Subject", "Перейдите по ссылке чтобы подтвердить аккаунт: " + verificationUrl);
         mailUtil.sendHtmlMessage(
                 savedUser.getEmail(),
                 MailTemplates.SUBJECT_REGISTRATION.get(),
@@ -97,7 +115,7 @@ public class AuthService {
         if (existingToken.isPresent()) {
             // Если токен уже существует, обновляем его (или можно удалить старый)
             RefreshToken tokenToUpdate = existingToken.get();
-            tokenToUpdate.setExpiresAt(LocalDateTime.now().plusDays(7));  // Обновляем срок действия
+            tokenToUpdate.setExpiresAt(LocalDateTime.now().plusDays(7));
             refreshTokenRepository.save(tokenToUpdate);
         } else {
             RefreshToken dbRefreshToken = RefreshToken.builder()
@@ -160,7 +178,6 @@ public class AuthService {
 
     // eyJhbGciOiJSUzI1NiIsImtpZCI6IjU2NGZlYWNlYzNlYmRmYWE3MzExYjlkOGU3M2M0MjgxOGYyOTEyNjQiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL2FjY291bnRzLmdvb2dsZS5jb20iLCJhenAiOiIzNjM2ODkzNzcyMDEtaTdkMjNnMDhmMXFkZWs1c2hranVqczQ4Mmw4cGtqcm4uYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJhdWQiOiIzNjM2ODkzNzcyMDEtaTdkMjNnMDhmMXFkZWs1c2hranVqczQ4Mmw4cGtqcm4uYXBwcy5nb29nbGV1c2VyY29udGVudC5jb20iLCJzdWIiOiIxMTAyMTI1OTkwMDgyODMzNzg5NDQiLCJlbWFpbCI6InJtLnRqLjc3N0BnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwibmJmIjoxNzM0MTQ2NjUxLCJuYW1lIjoicmFtaWwiLCJwaWN0dXJlIjoiaHR0cHM6Ly9saDMuZ29vZ2xldXNlcmNvbnRlbnQuY29tL2EvQUNnOG9jSkZOUWJwaU1mZy1JRFZEeE1UcTItQmhSQjhPaFo5ZE5TTU9mOC1rNkZEbF9IeVBIVT1zOTYtYyIsImdpdmVuX25hbWUiOiJyYW1pbCIsImlhdCI6MTczNDE0Njk1MSwiZXhwIjoxNzM0MTUwNTUxLCJqdGkiOiJhN2RhMzQ5ZmE5ZDlmNzc4NWViOTQ5YTllNGNiODYyOGEyMmI0NzEyIn0.jYT8kNeEx3Vriq0afkCsoXCynstrZJv7kZQeMOYg223z3CV2PWdCOW7kYRA0Kr8Fc-MsdqOAUq6EtHQzUHRpy772b0ot1MEshAYVPh_o0GksMufznrOXLBngbjZ3wA_MqIK2F7F43GuCEm5QtFQCWeYRs0DMoJJ1O7LZx684DE6cOlh1wkGLBt_iYWNOVyFD6dCMXhroRHnNNGhdtNNO4Rkc6nBWFVg8rV3PZwgJC7cczws6D0MEt2a-E0t0-AqhZp3p3fJE9-wNFc1DEHxb7Errz0wFZ0DoaC9xqWyaGMJtQuzzA2Y1dU26YVqb0QxzZmZoqMWY5LMHu6JZNpMexQ
     public AccessToken googleLogin(String googleToken, HttpServletResponse response) throws Exception {
-
         String email = tokenUtil.getEmailFromGoogleToken(googleToken);
 
         System.out.println("+--------------------------------------------------------------------------------------+");
@@ -169,16 +186,22 @@ public class AuthService {
 
         Optional<User> userOptional = userRepository.findByEmail(email);
         User user;
+
         if (userOptional.isPresent()) {
-            user = userOptional.get();  // Если пользователь найден, берем его из Optional
-            if (!user.getIsGoogleAuth()) {
-                user.setIsVerified(true);
+            user = userOptional.get();
+
+            // Если пользователь существует, но не использует Google OAuth
+            if (!user.getIsGoogleAuth() || user.getIsGoogleAuth() == null) {
+                user.setIsGoogleAuth(true);
+                user.setUpdatedAt(LocalDateTime.now());
                 user = userRepository.save(user);
             }
         } else {
-            user = User.builder() // Если пользователь не найден, создаем нового
+            // Если пользователь не найден, создаем нового
+            user = User.builder()
                     .email(email)
                     .isGoogleAuth(true)
+                    .isVerified(false)
                     .role(Role.USER)
                     .createdAt(LocalDateTime.now())
                     .updatedAt(LocalDateTime.now())
@@ -186,8 +209,11 @@ public class AuthService {
             user = userRepository.save(user);
         }
 
+        // Генерация токенов
         String accessToken = tokenUtil.generateAccessToken(user.getEmail(), user.getRole().toString(), user.getId());
         String refreshToken = tokenUtil.generateRefreshToken(user.getEmail());
+
+        // Создание и сохранение рефреш-токена
         RefreshToken dbRefreshToken = RefreshToken.builder()
                 .token(refreshToken)
                 .user(user)
@@ -196,8 +222,10 @@ public class AuthService {
                 .build();
         refreshTokenRepository.save(dbRefreshToken);
 
+        // Установка рефреш-токена в куки
         response.setHeader(HttpHeaders.SET_COOKIE, "refreshToken=" + refreshToken + "; HttpOnly; Secure; SameSite=Strict; Max-Age=604800");
 
+        // Возврат Access Token
         return new AccessToken(accessToken);
     }
 
