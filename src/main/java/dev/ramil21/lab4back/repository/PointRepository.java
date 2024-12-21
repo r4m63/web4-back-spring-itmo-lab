@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface PointRepository extends JpaRepository<Point, Integer> {
+public interface PointRepository extends JpaRepository<Point, Long> {
 
     List<Point> findByUserId(Long userId);
 

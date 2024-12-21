@@ -54,4 +54,24 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
+    @PostMapping("/passreset")
+    public ResponseEntity<Void> doResetPassword(@RequestBody UserCredentialsRequest request) throws Exception {
+        authService.passReset(request.getEmail());
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    // TODO: METHOD: CHECK token in REACT useEffect after get into 'http://localhost:5173/signin/reset-password'
+    @PostMapping("/passreset/verify")
+    public ResponseEntity<Void> doResetPasswordVerify(@RequestBody PasResetTokenDTO req) throws Exception {
+        if (authService.passResetVerify(req.getToken()))
+            return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
+    @PostMapping("/passreset/confirm")
+    public ResponseEntity<Void> doResetPasswordConfirm(@RequestBody PasswordResetDTO request) throws Exception {
+        authService.passResetConfirm(request.getPassword(), request.getToken());
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
 }

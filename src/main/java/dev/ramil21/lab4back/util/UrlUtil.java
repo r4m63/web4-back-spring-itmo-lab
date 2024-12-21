@@ -8,11 +8,11 @@ import java.util.Base64;
 
 
 @Component
-public class VerificationUtil {
+public class UrlUtil {
     private static final int TOKEN_LENGTH = 64; // Длина токена в байтах
     private final SecureRandom secureRandom = new SecureRandom();
 
-    public String generateVerificationToken() {
+    public String generateRandomToken() {
         byte[] randomBytes = new byte[TOKEN_LENGTH];
         secureRandom.nextBytes(randomBytes);
         return Base64.getUrlEncoder().withoutPadding().encodeToString(randomBytes);
@@ -29,6 +29,13 @@ public class VerificationUtil {
     public String createVerificationUrlByToken(String baseUrl, String token) {
         return UriComponentsBuilder.fromHttpUrl(baseUrl)
                 .path("/signup/verification")
+                .queryParam("token", token)
+                .toUriString();
+    }
+
+    public String createPassResetUrlByToken(String baseUrl, String token) {
+        return UriComponentsBuilder.fromHttpUrl(baseUrl)
+                .path("/signin/reset-password")
                 .queryParam("token", token)
                 .toUriString();
     }

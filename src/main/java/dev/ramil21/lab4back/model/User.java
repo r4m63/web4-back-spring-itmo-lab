@@ -27,6 +27,9 @@ public class User {
     @Column(name = "password_hash")
     private String passwordHash;
 
+    @Column(name = "username")
+    private String username;
+
     @Column(name = "is_verified")
     private Boolean isVerified;
 
@@ -34,6 +37,7 @@ public class User {
     private String verificationToken;
 
     @Column(name = "is_google_auth")
+    @Builder.Default
     private Boolean isGoogleAuth = false;
 
     @Column(name = "avatar_url")
@@ -41,6 +45,7 @@ public class User {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Builder.Default
     private Role role = Role.getDefaultRole();
 
     @Column(name = "created_at", updatable = false)

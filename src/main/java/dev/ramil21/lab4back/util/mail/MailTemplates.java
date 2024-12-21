@@ -8,8 +8,8 @@ package dev.ramil21.lab4back.util.mail;
 public enum MailTemplates {
 
     // SUBJECTS TEMPLATES
-    SUBJECT_LOGIN(""),
-    SUBJECT_RESET_PASSWORD(""),
+    SUBJECT_LOGIN("Вход"),
+    SUBJECT_RESET_PASSWORD("Восстановление пароля"),
     SUBJECT_REGISTRATION("Регистрация нового пользователя"),
 
     // BODY TEMPLATES

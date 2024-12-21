@@ -6,10 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.extern.jackson.Jacksonized;
 
-@Data
+
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
+@Data
 @Jacksonized
 public class UserCredentialsRequest {
     private String username;

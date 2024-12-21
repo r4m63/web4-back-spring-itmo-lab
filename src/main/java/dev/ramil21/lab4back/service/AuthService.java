@@ -1,15 +1,17 @@
 package dev.ramil21.lab4back.service;
 
 import dev.ramil21.lab4back.dto.AccessToken;
+import dev.ramil21.lab4back.model.PassResetToken;
 import dev.ramil21.lab4back.model.RefreshToken;
 import dev.ramil21.lab4back.model.Role;
 import dev.ramil21.lab4back.model.User;
+import dev.ramil21.lab4back.repository.PassResetTokenRepository;
 import dev.ramil21.lab4back.repository.RefreshTokenRepository;
 import dev.ramil21.lab4back.repository.UserRepository;
 import dev.ramil21.lab4back.security.ApiPath;
 import dev.ramil21.lab4back.util.PasswordUtil;
 import dev.ramil21.lab4back.util.TokenUtil;
-import dev.ramil21.lab4back.util.VerificationUtil;
+import dev.ramil21.lab4back.util.UrlUtil;
 import dev.ramil21.lab4back.util.mail.MailTemplates;
 import dev.ramil21.lab4back.util.mail.MailUtil;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,29 +34,32 @@ public class AuthService {
     private String googleClientId;
 
     PasswordUtil passwordUtil;
-    VerificationUtil verificationUtil;
+    UrlUtil urlUtil;
     TokenUtil tokenUtil;
     MailUtil mailUtil;
 
     UserRepository userRepository;
     RefreshTokenRepository refreshTokenRepository;
+    PassResetTokenRepository passResetTokenRepository;
 
     @Autowired
-    public AuthService(PasswordUtil passwordUtil, VerificationUtil verificationUtil, TokenUtil tokenUtil,
-                       MailUtil mailUtil, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository) {
+    public AuthService(PasswordUtil passwordUtil, UrlUtil urlUtil, TokenUtil tokenUtil,
+                       MailUtil mailUtil, UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
+                       PassResetTokenRepository passResetTokenRepository) {
         this.passwordUtil = passwordUtil;
-        this.verificationUtil = verificationUtil;
+        this.urlUtil = urlUtil;
         this.tokenUtil = tokenUtil;
         this.mailUtil = mailUtil;
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
+        this.passResetTokenRepository = passResetTokenRepository;
     }
 
     public void signup(String email, String password) {
         Optional<User> userOpt = userRepository.findByEmail(email);
 
-        String verificationToken = verificationUtil.generateVerificationToken();
-        String verificationUrl = verificationUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), verificationToken);
+        String verificationToken = urlUtil.generateRandomToken();
+        String verificationUrl = urlUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), verificationToken);
 
         if (userOpt.isPresent()) {
             // Если пользователь уже существует, но зарегистрирован через Google
@@ -228,5 +233,55 @@ public class AuthService {
         // Возврат Access Token
         return new AccessToken(accessToken);
     }
+
+    public void passReset(String email) {
+        Optional<User> userOpt = userRepository.findByEmail(email);
+
+        if (userOpt.isPresent()) {
+            String userEmail = userOpt.get().getEmail();
+            String resetToken = urlUtil.generateRandomToken();
+
+            PassResetToken resetTokenEntity = PassResetToken.builder()
+                    .token(resetToken)
+                    .isUsed(false)
+                    .user(userOpt.get())
+                    .createdAt(LocalDateTime.now())
+                    .build();
+            passResetTokenRepository.save(resetTokenEntity);
+            String url = urlUtil.createPassResetUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), resetToken);
+            mailUtil.sendHtmlMessage(
+                    userEmail,
+                    MailTemplates.SUBJECT_RESET_PASSWORD.get(),
+                    MailTemplates.BODY_RESET_PASSWORD.set(userEmail, url)
+            );
+            return;
+        }
+        throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid email id");
+    }
+
+    public boolean passResetVerify(String token) {
+        return passResetTokenRepository.existsByToken(token);
+    }
+
+    public void passResetConfirm(String password, String token) {
+        // TODO: менять пароль | найти по токену юзера, ему поменять захэшированный пароль
+
+        Optional<User> userOpt = passResetTokenRepository.findUserByToken(token);
+        if (userOpt.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid token | No such user_id");
+        }
+        User user = userOpt.get();
+        user.setPasswordHash(passwordUtil.hashPassword(password));
+        userRepository.save(user);
+        System.out.println("=================USER PASS SAVED SUCCESSFULLY " + password);
+
+        PassResetToken resetToken = passResetTokenRepository.findByToken(token).orElseThrow(() ->
+                new ResponseStatusException(HttpStatus.NOT_FOUND, "Invalid or expired password reset token"));
+        resetToken.setIsUsed(true);
+        passResetTokenRepository.save(resetToken);
+        System.out.println("=================resetToken.setIsUsed!!!");
+
+    }
+
 
 }

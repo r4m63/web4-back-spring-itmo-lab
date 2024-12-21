@@ -33,6 +33,7 @@ public class RefreshToken {
     private String deviceOn;
 
     @Column(name = "is_revoked")
+    @Builder.Default
     private Boolean isRevoked = false;
 
     @Column(name = "revoked_at")
