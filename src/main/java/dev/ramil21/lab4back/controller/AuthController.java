@@ -41,16 +41,16 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
-    @PostMapping("refresh-tokens")
-    public ResponseEntity<AccessToken> doRefreshTokens(@RequestBody RefreshTokenRequest request, HttpServletResponse response) {
-        AccessToken res = authService.refreshTokens(request.getRefreshToken(), response);
-        return ResponseEntity.status(HttpStatus.OK).body(res);
-    }
-
     // TODO: посмотреть что с request.getCredentials(), что можно полезного брать от туда
     @PostMapping("/google-login")
     public ResponseEntity<AccessToken> doGoogleLogin(@RequestBody GoogleLoginRequest request, HttpServletResponse response) throws Exception {
         AccessToken res = authService.googleLogin(request.getToken(), response);
+        return ResponseEntity.status(HttpStatus.OK).body(res);
+    }
+
+    @PostMapping("refresh-tokens")
+    public ResponseEntity<AccessToken> doRefreshTokens(@RequestBody RefreshTokenRequest request, HttpServletResponse response) {
+        AccessToken res = authService.refreshTokens(request.getRefreshToken(), response);
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 

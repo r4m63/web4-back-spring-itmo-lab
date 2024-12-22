@@ -30,21 +30,20 @@ public class Filter extends OncePerRequestFilter {
         String token = null;
         Cookie[] cookies = request.getCookies();
         System.out.println("COOKIES: " + Arrays.toString(cookies));
-        if (cookies != null) {
-            for (Cookie cookie : cookies) {
-                if ("accessToken".equals(cookie.getName())) {
-                    token = cookie.getValue();
-                    System.out.println("token: " + token);
-                    break;
-                }
+        for (Cookie cookie : cookies) {
+            if ("accessToken".equals(cookie.getName())) {
+                token = cookie.getValue();
+                System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++JWT-TOKEN: " + token);
+                break;
             }
         }
 
         // Если токен найден, извлекаем email из него
         if (token != null) {
             try {
+                System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++JWT-TOKEN: " + token);
                 String email = tokenUtil.getEmailFromToken(token);
-                System.out.println(email);
+                System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++EMAIL_FROM_JWT_TOKEN: " + email);
                 if (email != null) {
                     SecurityContextHolder.getContext().setAuthentication(new SimpleAuth(email));
                 }

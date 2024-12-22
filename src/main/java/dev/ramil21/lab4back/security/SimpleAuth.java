@@ -9,7 +9,7 @@ class SimpleAuth extends AbstractAuthenticationToken {
     private final String email;
 
     public SimpleAuth(String email) {
-        super(null);  // Нет authorities, так как только email передается
+        super(null);
         this.email = email;
         setAuthenticated(true);
     }
