@@ -1,9 +1,9 @@
 package dev.ramil21.lab4back.controller;
 
+import dev.ramil21.lab4back.dto.PasswordResetDTO;
 import dev.ramil21.lab4back.dto.PointDTO;
 import dev.ramil21.lab4back.dto.PointHitResponse;
 import dev.ramil21.lab4back.dto.UserPointRequest;
-import dev.ramil21.lab4back.model.Point;
 import dev.ramil21.lab4back.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,6 +42,12 @@ public class UserController {
     @PostMapping("/delete-points")
     public ResponseEntity<Void> deleteAllPoints() {
         userService.clearAllPoints();
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PostMapping("/user/change-pass")
+    public ResponseEntity<Void> changePass(@RequestBody PasswordResetDTO req) {
+        userService.changePassword(req.getPassword());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 

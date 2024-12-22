@@ -6,6 +6,7 @@ import dev.ramil21.lab4back.model.Point;
 import dev.ramil21.lab4back.model.User;
 import dev.ramil21.lab4back.repository.PointRepository;
 import dev.ramil21.lab4back.repository.UserRepository;
+import dev.ramil21.lab4back.util.PasswordUtil;
 import dev.ramil21.lab4back.util.PointCheckerUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +22,16 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class UserService {
 
+    PasswordUtil passwordUtil;
+
     UserRepository userRepository;
     PointRepository pointRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, PointRepository pointRepository) {
+    public UserService(UserRepository userRepository, PointRepository pointRepository, PasswordUtil passwordUtil) {
         this.userRepository = userRepository;
         this.pointRepository = pointRepository;
+        this.passwordUtil = passwordUtil;
     }
 
     public PointHitResponse checkPointHit(float x, float y, float r) {
@@ -82,6 +86,21 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "User not found"));
 
         pointRepository.deleteAllByUserId(user.getId());
+    }
+
+    public void changePassword(String password) {
+        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (email != null) {
+            System.out.println("Email from JWT: " + email);
+        } else {
+            System.out.println("No email found in JWT token.");
+        }
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.CONFLICT, "User not found"));
+
+        user.setPasswordHash(passwordUtil.hashPassword(password));
+        userRepository.save(user);
+        System.out.println("=================USER PASS SAVED SUCCESSFULLY " + password);
     }
 
 }
