@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 //@RequestMapping("/api/user")
 @RequiredArgsConstructor
+@CrossOrigin(origins = "*")
 public class UserController {
 
     UserService userService;
@@ -29,25 +31,25 @@ public class UserController {
 
     @PostMapping("/check-point")
     public ResponseEntity<PointHitResponse> checkPoint(@RequestBody UserPointRequest request) {
-        PointHitResponse res = userService.checkPointHit(request.getX(), request.getY(), request.getR());
+        PointHitResponse res = userService.checkPointHit(request.getX(), request.getY(), request.getR(), request.getToken());
         return ResponseEntity.status(HttpStatus.CREATED).body(res);
     }
 
     @PostMapping("/all-points")
-    public ResponseEntity<List<PointDTO>> allPoints() {
-        List<PointDTO> res = userService.getAllPoints();
+    public ResponseEntity<List<PointDTO>> allPoints(@RequestBody UserPointRequest request) {
+        List<PointDTO> res = userService.getAllPoints(request.getToken());
         return ResponseEntity.status(HttpStatus.OK).body(res);
     }
 
     @PostMapping("/delete-points")
-    public ResponseEntity<Void> deleteAllPoints() {
-        userService.clearAllPoints();
+    public ResponseEntity<Void> deleteAllPoints(@RequestBody UserPointRequest request) {
+        userService.clearAllPoints(request.getToken());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 
     @PostMapping("/user/change-pass")
     public ResponseEntity<Void> changePass(@RequestBody PasswordResetDTO req) {
-        userService.changePassword(req.getPassword());
+        userService.changePassword(req.getPassword(), req.getToken());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 

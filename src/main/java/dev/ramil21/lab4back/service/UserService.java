@@ -8,6 +8,7 @@ import dev.ramil21.lab4back.repository.PointRepository;
 import dev.ramil21.lab4back.repository.UserRepository;
 import dev.ramil21.lab4back.util.PasswordUtil;
 import dev.ramil21.lab4back.util.PointCheckerUtil;
+import dev.ramil21.lab4back.util.TokenUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -23,19 +24,27 @@ import java.util.stream.Collectors;
 public class UserService {
 
     PasswordUtil passwordUtil;
+    TokenUtil tokenUtil;
 
     UserRepository userRepository;
     PointRepository pointRepository;
 
     @Autowired
-    public UserService(UserRepository userRepository, PointRepository pointRepository, PasswordUtil passwordUtil) {
+    public UserService(UserRepository userRepository, PointRepository pointRepository, PasswordUtil passwordUtil, TokenUtil tokenUtil) {
         this.userRepository = userRepository;
         this.pointRepository = pointRepository;
         this.passwordUtil = passwordUtil;
+        this.tokenUtil = tokenUtil;
     }
 
-    public PointHitResponse checkPointHit(float x, float y, float r) {
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public PointHitResponse checkPointHit(float x, float y, float r, String token) {
+//        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        String email = tokenUtil.getEmailFromToken(token);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+        System.out.println("|   EMAIL FROM GOOGLE TOKEN: " + email);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+
         if (email != null) {
             System.out.println("Email from JWT: " + email);
         } else {
@@ -57,8 +66,12 @@ public class UserService {
         return new PointHitResponse(x, y, r, isHit);
     }
 
-    public List<PointDTO> getAllPoints() {
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public List<PointDTO> getAllPoints(String token) {
+        String email = tokenUtil.getEmailFromToken(token);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+        System.out.println("|   EMAIL FROM GOOGLE TOKEN: " + email);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+
         if (email != null) {
             System.out.println("Email from JWT: " + email);
         } else {
@@ -75,8 +88,12 @@ public class UserService {
                 .collect(Collectors.toList());
     }
 
-    public void clearAllPoints() {
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public void clearAllPoints(String token) {
+        String email = tokenUtil.getEmailFromToken(token);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+        System.out.println("|   EMAIL FROM GOOGLE TOKEN: " + email);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+
         if (email != null) {
             System.out.println("Email from JWT: " + email);
         } else {
@@ -88,8 +105,11 @@ public class UserService {
         pointRepository.deleteAllByUserId(user.getId());
     }
 
-    public void changePassword(String password) {
-        String email = (String) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    public void changePassword(String password, String token) {
+        String email = tokenUtil.getEmailFromToken(token);
+        System.out.println("+--------------------------------------------------------------------------------------+");
+        System.out.println("|   EMAIL FROM GOOGLE TOKEN: " + email);
+        System.out.println("+--------------------------------------------------------------------------------------+");
         if (email != null) {
             System.out.println("Email from JWT: " + email);
         } else {

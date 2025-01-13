@@ -59,7 +59,7 @@ public class AuthService {
         Optional<User> userOpt = userRepository.findByEmail(email);
 
         String verificationToken = urlUtil.generateRandomToken();
-        String verificationUrl = urlUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), verificationToken);
+        String verificationUrl = urlUtil.createVerificationUrlByToken(ApiPath.FRONTEND_BASE_URL_PROD.get(), verificationToken);
 
         if (userOpt.isPresent()) {
             // Если пользователь уже существует, но зарегистрирован через Google
@@ -248,7 +248,7 @@ public class AuthService {
                     .createdAt(LocalDateTime.now())
                     .build();
             passResetTokenRepository.save(resetTokenEntity);
-            String url = urlUtil.createPassResetUrlByToken(ApiPath.FRONTEND_BASE_URL_DEV.get(), resetToken);
+            String url = urlUtil.createPassResetUrlByToken(ApiPath.FRONTEND_BASE_URL_PROD.get(), resetToken);
             mailUtil.sendHtmlMessage(
                     userEmail,
                     MailTemplates.SUBJECT_RESET_PASSWORD.get(),
@@ -282,6 +282,5 @@ public class AuthService {
         System.out.println("=================resetToken.setIsUsed!!!");
 
     }
-
 
 }

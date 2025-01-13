@@ -5,7 +5,7 @@ package dev.ramil21.lab4back.security;
  */
 public enum ApiPath {
 
-    FRONTEND_BASE_URL_PROD("http://itmo.ramil21.ru"),
+    FRONTEND_BASE_URL_PROD("http://ramil21.ru"),
     FRONTEND_BASE_URL_DEV("http://localhost:5173"),
 
     BACKEND_BASE_URL_PROD("https://localhost:8080"),

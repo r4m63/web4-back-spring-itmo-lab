@@ -25,20 +25,29 @@ public class Filter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        // Извлекаем JWT токен из cookie
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        HttpServletResponse httpResponse = (HttpServletResponse) response;
+        httpResponse.setHeader("Access-Control-Allow-Origin", "http://ramil21.ru");
+        httpResponse.setHeader("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+        httpResponse.setHeader("Access-Control-Allow-Headers", "*");
+
         String token = null;
         Cookie[] cookies = request.getCookies();
-        System.out.println("COOKIES: " + Arrays.toString(cookies));
-        for (Cookie cookie : cookies) {
-            if ("accessToken".equals(cookie.getName())) {
-                token = cookie.getValue();
-                System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++JWT-TOKEN: " + token);
-                break;
+
+        if (cookies != null) {
+            System.out.println("COOKIES: " + Arrays.toString(cookies));
+            for (Cookie cookie : cookies) {
+                if ("accessToken".equals(cookie.getName())) {
+                    token = cookie.getValue();
+                    System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++JWT-TOKEN: " + token);
+                    break;
+                }
             }
+        } else {
+            System.out.println("COOKIES: null");
         }
 
-        // Если токен найден, извлекаем email из него
         if (token != null) {
             try {
                 System.out.println("++++++++++++++++++++++++++++++++++++++++++++++++++++++JWT-TOKEN: " + token);
